@@ -1,0 +1,7 @@
+- Gamejam Starter Kit by me (https://github.com/atil/gamejam-starterkit)
+- Top Down Shooter Character by Chris Julch (https://chrisjulch.itch.io/top-down-shooter-pixel-art)
+- Creature by neilgomes (https://opengameart.org/content/topdown-creature-sprite)
+- PixaTool by KronBits (https://kronbits.itch.io/pixatool)
+- Top-Down Ghoul Run by ComboSmooth (https://combosmooth.itch.io/top-down-ghoul-run-sprite-animation)
+- Various assets by Valentin Tazhetdinov (https://valentint.itch.io/atmospheric-tds-pack)
+- Stencil buffers tutorial by Ronja (https://www.ronja-tutorials.com/post/022-stencil-buffers/)
