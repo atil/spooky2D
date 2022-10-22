@@ -43,6 +43,7 @@ namespace Game
         [SerializeField] private float _playerVisibilityRange = 500;
         [SerializeField] private float _playerVisibilityAngle = 45;
         [SerializeField] private Transform _playerTransform;
+        [SerializeField] private CircleCollider2D _playerCollider;
         [SerializeField] private SpriteRenderer _playerSpriteRenderer;
         [SerializeField] private SpriteFx _playerIdleFx;
         [SerializeField] private SpriteFx _playerRunFx;
@@ -68,7 +69,16 @@ namespace Game
 
         private void Update()
         {
+            UpdateVisibilityShape();
+
+            UpdatePlayer();
+        }
+
+        private void UpdateVisibilityShape()
+        {
             const float MaxRayDist = 40;
+
+            int excludePlayerMask = ~(1 << LayerMask.NameToLayer("Player"));
 
             List<Vector2> visibilityZoneCorners = new List<Vector2>();
 
@@ -79,11 +89,11 @@ namespace Game
             Vector2 coneDir1 = (coneP1 - (Vector2)_playerTransform.position).normalized;
             Vector2 coneDir2 = (coneP2 - (Vector2)_playerTransform.position).normalized;
 
-            RaycastHit2D coneHit1 = Physics2D.Raycast(_playerTransform.position, coneDir1, MaxRayDist);
+            RaycastHit2D coneHit1 = Physics2D.Raycast(_playerTransform.position, coneDir1, MaxRayDist, excludePlayerMask);
             Vector2 conePoint1 = coneHit1.collider != null ? coneHit1.point : new Ray2D(_playerTransform.position, coneDir1).GetPoint(MaxRayDist);
             visibilityZoneCorners.Add(conePoint1);
 
-            RaycastHit2D coneHit2 = Physics2D.Raycast(_playerTransform.position, coneDir2, MaxRayDist);
+            RaycastHit2D coneHit2 = Physics2D.Raycast(_playerTransform.position, coneDir2, MaxRayDist, excludePlayerMask);
             Vector2 conePoint2 = coneHit2.collider != null ? coneHit2.point : new Ray2D(_playerTransform.position, coneDir2).GetPoint(MaxRayDist);
             visibilityZoneCorners.Add(conePoint2);
 
@@ -93,18 +103,18 @@ namespace Game
                 if (!dir.IsDirectionBetween(coneDir1, coneDir2)) { continue; }
 
                 Vector2 nudgedCorner = corner - (dir * 0.1f);
-                RaycastHit2D hit = Physics2D.Linecast(_playerTransform.position, nudgedCorner);
+                RaycastHit2D hit = Physics2D.Linecast(_playerTransform.position, nudgedCorner, excludePlayerMask);
                 if (hit.collider == null)
                 {
                     visibilityZoneCorners.Add(nudgedCorner);
 
                     Vector2 dir1 = dir.Rotate(1f);
-                    RaycastHit2D rayHit1 = Physics2D.Raycast(_playerTransform.position, dir1, MaxRayDist);
+                    RaycastHit2D rayHit1 = Physics2D.Raycast(_playerTransform.position, dir1, MaxRayDist, excludePlayerMask);
                     Vector2 rotatedPoint1 = rayHit1.collider != null ? rayHit1.point : new Ray2D(_playerTransform.position, dir1).GetPoint(MaxRayDist);
                     visibilityZoneCorners.Add(rotatedPoint1);
 
                     Vector2 dir2 = dir.Rotate(-1f);
-                    RaycastHit2D rayHit2 = Physics2D.Raycast(_playerTransform.position, dir2, MaxRayDist);
+                    RaycastHit2D rayHit2 = Physics2D.Raycast(_playerTransform.position, dir2, MaxRayDist, excludePlayerMask);
                     Vector2 rotatedPoint2 = rayHit2.collider != null ? rayHit2.point : new Ray2D(_playerTransform.position, dir2).GetPoint(MaxRayDist);
                     visibilityZoneCorners.Add(rotatedPoint2);
                 }
@@ -115,12 +125,12 @@ namespace Game
                 Vector2 p1Local = p1 - (Vector2)_playerTransform.position;
                 Vector2 p2Local = p2 - (Vector2)_playerTransform.position;
 
-                Vector2 reference = (Vector2) (-_playerTransform.right);
+                Vector2 reference = (Vector2)(-_playerTransform.right);
                 float angle1 = Vector2.SignedAngle(reference, p1Local);
                 angle1 = (angle1 + 360) % 360;
                 float angle2 = Vector2.SignedAngle(reference, p2Local);
                 angle2 = (angle2 + 360) % 360;
-                
+
                 return angle2.CompareTo(angle1);
             });
 
@@ -128,9 +138,12 @@ namespace Game
 
             foreach (Vector2 p in visibilityZoneCorners)
             {
-                Debug.DrawLine(_playerTransform.position, p);
+                Debug.DrawLine(_playerTransform.position, p, Color.blue);
             }
+        }
 
+        private void UpdatePlayer()
+        {
             Vector2 moveDir = Vector2.zero;
             if (Input.GetKey(KeyCode.W))
             {
@@ -150,7 +163,18 @@ namespace Game
             }
             moveDir.Normalize();
 
-            _playerTransform.position += (Vector3)moveDir * _playerSpeed * Time.deltaTime;
+            Vector2 displacement = moveDir * _playerSpeed * Time.deltaTime;
+
+            int excludePlayerMask = ~(1 << LayerMask.NameToLayer("Player"));
+            RaycastHit2D moveCastResult = Physics2D.CircleCast(_playerTransform.position, _playerCollider.radius, moveDir, _playerSpeed * Time.deltaTime, excludePlayerMask);
+            if (moveCastResult.collider != null)
+            {
+                // Subtract the component that's along the normal's direction
+                Vector2 a = moveCastResult.normal * Vector2.Dot(displacement, moveCastResult.normal);
+                displacement -= a;
+            }
+
+            _playerTransform.position += (Vector3)displacement;
 
             Vector3 cursorWorldPos = _camera.ScreenToWorldPoint(Input.mousePosition);
             Vector3 toCursor = cursorWorldPos.WithZ(_playerTransform.position.z) - _playerTransform.position;
