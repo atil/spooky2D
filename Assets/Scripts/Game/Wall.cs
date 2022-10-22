@@ -16,7 +16,7 @@ namespace Game
         private Vector3[] _localPoints;
         public Vector3[] LocalPoints => _localPoints;
         
-        void Start()
+        void Awake()
         {
             if (Application.isPlaying)
             {
@@ -50,6 +50,7 @@ namespace Game
 
         private void OnDrawGizmos()
         {
+            if (_localPoints == null) { return; }
             for (int i = 0; i < _localPoints.Length; i++)
             {
                 Vector3 p1 = transform.position + _localPoints[i];

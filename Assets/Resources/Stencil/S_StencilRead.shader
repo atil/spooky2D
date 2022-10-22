@@ -9,7 +9,7 @@ Shader "Spooky2D/S_StencilRead" {
 		[IntRange] _StencilRef("Stencil Reference Value", Range(0,255)) = 0
 	}
 		SubShader{
-			Tags{ "RenderType" = "Opaque" "Queue" = "Geometry"}
+			Tags{ "RenderType" = "Transparent" "Queue" = "Transparent"}
 
 			//stencil operation
 			Stencil{
@@ -19,7 +19,7 @@ Shader "Spooky2D/S_StencilRead" {
 
 			CGPROGRAM
 
-			#pragma surface surf Standard fullforwardshadows
+			#pragma surface surf Standard fullforwardshadows alpha:fade
 			#pragma target 3.0
 
 			sampler2D _MainTex;
@@ -37,6 +37,7 @@ Shader "Spooky2D/S_StencilRead" {
 				fixed4 col = tex2D(_MainTex, i.uv_MainTex);
 				col *= _Color;
 				o.Albedo = col.rgb;
+				o.Alpha = col.a;
 				o.Metallic = _Metallic;
 				o.Smoothness = _Smoothness;
 				o.Emission = _Emission;
