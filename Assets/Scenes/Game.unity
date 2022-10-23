@@ -1545,7 +1545,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -3394,9 +3394,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _coverImage: {fileID: 538998849}
   _openFlashInfo:
-    _startColor: {r: 0.6313726, g: 0.6313726, b: 0.6313726, a: 1}
+    _startColor: {r: 0, g: 0, b: 0, a: 1}
     _endColor: {r: 0, g: 0, b: 0, a: 0}
-    _duration: 1
+    _duration: 2
     _curve:
       serializedVersion: 2
       m_Curve:
@@ -3421,6 +3421,7 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
+  _cover: {fileID: 538998849}
 --- !u!114 &1470214249
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3995,6 +3996,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4900aec736b043318953f83678770105, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _ui: {fileID: 1470214248}
   _gameCamera: {fileID: 1999863644}
   _renderCamera: {fileID: 1081030286}
   _playerSpeed: 3

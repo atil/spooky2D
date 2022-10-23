@@ -7,3 +7,4 @@
 - Various textures by Screaming Brain Studios (https://screamingbrainstudios.itch.io/tiny-texture-pack-2)
 - Stencil buffers tutorial by Ronja (https://www.ronja-tutorials.com/post/022-stencil-buffers/)
 - 2D visibility algorithm by Nicky (https://ncase.me/sight-and-light/)
+- Font by Peter Hull (https://fonts.google.com/specimen/VT323)

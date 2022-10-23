@@ -37,6 +37,7 @@ namespace Game
         }
 
         [Header("World")]
+        [SerializeField] private GameUi _ui;
         [SerializeField] private Camera _gameCamera;
         [SerializeField] private Camera _renderCamera;
 
@@ -239,7 +240,7 @@ namespace Game
 
             if (Vector2.Distance(_ghoulTransform.position, _playerTransform.position) < 0.7f)
             {
-                // end
+                _ui.ActivateCover();
 
                 SceneManager.LoadScene("End");
             }
