@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9f83ea16625442dcb571707a1c565e02, type: 3}
+  m_Name: CreatureFx
+  m_EditorClassIdentifier: 
+  _type: 1
+  _offset: {x: 0, y: 0}
+  _scale: 1
+  _framesPerSecond: 8
+  _duration: 3
+  _sprites:
+  - {fileID: 21300000, guid: cf4b52b57c9b8174db46039d4b05b258, type: 3}
+  - {fileID: 21300000, guid: 34bd6bdb1c510e74ebd80fa132fb48c2, type: 3}
+  - {fileID: 21300000, guid: 48be085085071ad4b84d9a637bfdb48e, type: 3}
+  - {fileID: 21300000, guid: 1ac322b617a24cf4ea6b4d4af0ff0c4a, type: 3}
+  - {fileID: 21300000, guid: 5dff2aab0b4d9a24bb360f5c95af5734, type: 3}
+  - {fileID: 21300000, guid: 6e20548799bbeba46a087c71aa9a3b31, type: 3}
+  - {fileID: 21300000, guid: edfcaa6e25ccdc54a937d0e93e28c32a, type: 3}
+  - {fileID: 21300000, guid: 40c2b58f10ed59441b691a84be417d92, type: 3}
+  - {fileID: 21300000, guid: d82af9d59290dc1479a1117affc67b83, type: 3}
+  - {fileID: 21300000, guid: 68123eab8e69d0c40b3c1b617c2fddd4, type: 3}
+  - {fileID: 21300000, guid: 87a0fa041786e0b4e87bfc8bb1b468f6, type: 3}

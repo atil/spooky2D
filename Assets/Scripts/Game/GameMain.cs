@@ -40,6 +40,8 @@ namespace Game
         [SerializeField] private GameUi _ui;
         [SerializeField] private Camera _gameCamera;
         [SerializeField] private Camera _renderCamera;
+        [SerializeField] private SpriteFx _creatureFx;
+        [SerializeField] private SpriteRenderer _creatureRenderer;
 
         [Header("Player")]
         [SerializeField] private float _playerSpeed = 2;
@@ -74,6 +76,8 @@ namespace Game
         private void Start()
         {
             Sfx.Instance.StartMusic("Ambience", true);
+
+            CoroutineStarter.Run(SpriteFx.Play(_creatureFx, _creatureRenderer));
 
             _physicsLayerMask = ~(1 << LayerMask.NameToLayer("Player") | 1 << LayerMask.NameToLayer("Trigger"));
             _playerFxCoroutine = CoroutineStarter.Run(SpriteFx.Play(_playerIdleFx, _playerSpriteRenderer));
