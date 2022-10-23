@@ -37,7 +37,8 @@ namespace Game
         }
 
         [Header("World")]
-        [SerializeField] private Camera _camera;
+        [SerializeField] private Camera _gameCamera;
+        [SerializeField] private Camera _renderCamera;
 
         [Header("Player")]
         [SerializeField] private float _playerSpeed = 2;
@@ -193,11 +194,13 @@ namespace Game
 
             _playerTransform.position += (Vector3)displacement;
 
-            Vector3 cursorWorldPos = _camera.ScreenToWorldPoint(Input.mousePosition);
+            Vector3 cursorWorldPos = _renderCamera.ScreenToWorldPoint(Input.mousePosition);
+            Debug.DrawLine(_playerTransform.position, cursorWorldPos, Color.yellow);
             Vector3 toCursor = cursorWorldPos.WithZ(_playerTransform.position.z) - _playerTransform.position;
             _playerTransform.right = toCursor;
 
-            _camera.transform.position = Vector3.Lerp(_playerTransform.position, cursorWorldPos, 0.2f).WithZ(_camera.transform.position.z);
+            _gameCamera.transform.position = Vector3.Lerp(_playerTransform.position, cursorWorldPos, 0.2f).WithZ(_gameCamera.transform.position.z);
+            _renderCamera.transform.position = _gameCamera.transform.position;
 
             if (moveDir.sqrMagnitude > 0.1f)
             {
@@ -230,7 +233,7 @@ namespace Game
         private void UpdateGhoulSequence()
         {
             if (!_isGhoulSequence) { return; }
-            
+
             Vector3 dir = (_playerTransform.position - _ghoulTransform.position).normalized;
             _ghoulTransform.position += dir * (_ghoulRunSpeed * Time.deltaTime);
 
