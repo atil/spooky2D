@@ -8,3 +8,5 @@
 - Stencil buffers tutorial by Ronja (https://www.ronja-tutorials.com/post/022-stencil-buffers/)
 - 2D visibility algorithm by Nicky (https://ncase.me/sight-and-light/)
 - Font by Peter Hull (https://fonts.google.com/specimen/VT323)
+- Road sfx by rubberduck (https://opengameart.org/content/80-cc0-creature-sfx)
+- Ambience sfx by Little Robot Sound Factory (https://opengameart.org/content/horror-sound-effects-library)

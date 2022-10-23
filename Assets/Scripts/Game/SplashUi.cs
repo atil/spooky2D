@@ -18,6 +18,7 @@ namespace Game
         
         public void OnClickedPlayButton()
         {
+            Sfx.Instance.Play("Click");
             _playButton.interactable = false;
             Flash(_closeFlashInfo, () => SceneManager.LoadScene("Game"));
         }

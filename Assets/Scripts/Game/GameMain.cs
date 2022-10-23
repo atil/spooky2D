@@ -51,15 +51,19 @@ namespace Game
         [SerializeField] private SpriteFx _playerIdleFx;
         [SerializeField] private SpriteFx _playerRunFx;
         [SerializeField] private VisibilityConeSetup _visibilityCone;
+        [SerializeField] private float _playerStepDistance;
 
         [Header("Ghoul")]
         [SerializeField] private Transform _ghoulTransform;
         [SerializeField] private SpriteFx _ghoulFx;
         [SerializeField] private SpriteRenderer _ghoulRenderer;
         [SerializeField] private float _ghoulRunSpeed = 5;
+        [SerializeField] private AudioSource _ghoulAudioSource;
+        [SerializeField] private Vector2 _ghoulAudioVolumeRange;
 
         private PlayerState _playerState = PlayerState.Idle;
         private Coroutine _playerFxCoroutine;
+        private float _playerTravelledDistance;
 
         private List<Vector2> _wallCorners = new List<Vector2>();
 
@@ -69,6 +73,8 @@ namespace Game
 
         private void Start()
         {
+            Sfx.Instance.StartMusic("Ambience", true);
+
             _physicsLayerMask = ~(1 << LayerMask.NameToLayer("Player") | 1 << LayerMask.NameToLayer("Trigger"));
             _playerFxCoroutine = CoroutineStarter.Run(SpriteFx.Play(_playerIdleFx, _playerSpriteRenderer));
 
@@ -179,15 +185,17 @@ namespace Game
             moveDir.Normalize();
 
             float speed = _playerSpeed;
-
 #if UNITY_EDITOR
             if (Input.GetKey(KeyCode.LeftShift)) speed *= 3;
 #endif
-
             Vector2 displacement = moveDir * (speed * Time.deltaTime);
 
+            bool skipCollision = false;
+#if UNITY_EDITOR
+            if (Input.GetKey(KeyCode.LeftAlt)) skipCollision = true;
+#endif
             RaycastHit2D moveCastResult = Physics2D.CircleCast(_playerTransform.position, _playerCollider.radius, moveDir, _playerSpeed * Time.deltaTime, _physicsLayerMask);
-            if (false && moveCastResult.collider != null)
+            if (!skipCollision && moveCastResult.collider != null)
             {
                 // Subtract the component that's along the normal's direction
                 displacement -= moveCastResult.normal * Vector2.Dot(displacement, moveCastResult.normal);
@@ -210,6 +218,17 @@ namespace Game
                     CoroutineStarter.Stop(_playerFxCoroutine);
                     _playerFxCoroutine = CoroutineStarter.Run(SpriteFx.Play(_playerRunFx, _playerSpriteRenderer));
                     _playerState = PlayerState.Run;
+                    Sfx.Instance.PlayRandom("Footstep");
+
+                    _playerTravelledDistance = 0;
+                }
+
+                _playerTravelledDistance += displacement.magnitude;
+                if (_playerTravelledDistance > _playerStepDistance)
+                {
+                    Sfx.Instance.PlayRandom("Footstep");
+                    _playerTravelledDistance = 0;
+
                 }
             }
             else
@@ -219,6 +238,8 @@ namespace Game
                     CoroutineStarter.Stop(_playerFxCoroutine);
                     _playerFxCoroutine = CoroutineStarter.Run(SpriteFx.Play(_playerIdleFx, _playerSpriteRenderer));
                     _playerState = PlayerState.Idle;
+
+                    if (_playerTravelledDistance / _playerStepDistance > 0.3f) Sfx.Instance.PlayRandom("Footstep");
                 }
             }
         }
@@ -228,20 +249,28 @@ namespace Game
             _isGhoulSequence = true;
             _ghoulTransform.gameObject.SetActive(true);
             CoroutineStarter.Run(SpriteFx.Play(_ghoulFx, _ghoulRenderer));
-
+            _ghoulAudioSource.Play();
         }
 
         private void UpdateGhoulSequence()
         {
             if (!_isGhoulSequence) { return; }
 
+            float dist = Vector2.Distance(_ghoulTransform.position, _playerTransform.position);
+
+            float volumeT = Mathf.Lerp(1, 0, dist / 10.0f);
+            _ghoulAudioSource.volume = Mathf.Lerp(_ghoulAudioVolumeRange.x, _ghoulAudioVolumeRange.y, volumeT);
+            
             Vector3 dir = (_playerTransform.position - _ghoulTransform.position).normalized;
             _ghoulTransform.position += dir * (_ghoulRunSpeed * Time.deltaTime);
 
-            if (Vector2.Distance(_ghoulTransform.position, _playerTransform.position) < 0.7f)
+            if (dist < 1f)
             {
+                // End
+                _ghoulAudioSource.Stop();
                 _ui.ActivateCover();
-
+                Sfx.Instance.FadeOutMusic(0.01f);
+                Sfx.Instance.Play("Deep");
                 SceneManager.LoadScene("End");
             }
         }
