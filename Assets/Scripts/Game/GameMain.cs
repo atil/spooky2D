@@ -192,14 +192,21 @@ namespace Game
 
             bool skipCollision = false;
 #if UNITY_EDITOR
-            if (Input.GetKey(KeyCode.LeftAlt)) skipCollision = true;
+            if (Input.GetKey(KeyCode.Space)) skipCollision = true;
 #endif
-            RaycastHit2D moveCastResult = Physics2D.CircleCast(_playerTransform.position, _playerCollider.radius, moveDir, _playerSpeed * Time.deltaTime, _physicsLayerMask);
-            if (!skipCollision && moveCastResult.collider != null)
+            if (!skipCollision)
             {
-                // Subtract the component that's along the normal's direction
-                displacement -= moveCastResult.normal * Vector2.Dot(displacement, moveCastResult.normal);
+                RaycastHit2D[] moveCastResults = Physics2D.CircleCastAll(_playerTransform.position, _playerCollider.radius, moveDir, _playerSpeed * Time.deltaTime, _physicsLayerMask);
+                foreach (RaycastHit2D hit in moveCastResults)
+                {
+                    if (hit.collider == null) { continue; }
+
+                    // Subtract the component that's along the normal's direction
+                    displacement -= hit.normal * Vector2.Dot(displacement, hit.normal);
+
+                }
             }
+
 
             _playerTransform.position += (Vector3)displacement;
 
