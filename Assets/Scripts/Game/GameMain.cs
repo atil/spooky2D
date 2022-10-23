@@ -44,7 +44,6 @@ namespace Game
         [SerializeField] private SpriteRenderer _creatureRenderer;
 
         [Header("Player")]
-        [SerializeField] private float _playerSpeed = 2;
         [SerializeField] private float _playerVisibilityRange = 500;
         [SerializeField] private float _playerVisibilityAngle = 45;
         [SerializeField] private Transform _playerTransform;
@@ -54,6 +53,11 @@ namespace Game
         [SerializeField] private SpriteFx _playerRunFx;
         [SerializeField] private VisibilityConeSetup _visibilityCone;
         [SerializeField] private float _playerStepDistance;
+        [SerializeField] private float _playerAccel = 1;
+        [SerializeField] private float _playerMaxSpeed = 3;
+        [SerializeField] private float _playerFriction = 2;
+
+        [SerializeField] private float _playerSpeed = 3;
 
         [Header("Ghoul")]
         [SerializeField] private Transform _ghoulTransform;
@@ -66,6 +70,7 @@ namespace Game
         private PlayerState _playerState = PlayerState.Idle;
         private Coroutine _playerFxCoroutine;
         private float _playerTravelledDistance;
+        private Vector2 _playerVelocity;
 
         private List<Vector2> _wallCorners = new List<Vector2>();
 
@@ -99,7 +104,6 @@ namespace Game
 
             UpdateGhoulSequence();
         }
-
 
         private void UpdateVisibilityShape()
         {
@@ -188,11 +192,27 @@ namespace Game
             }
             moveDir.Normalize();
 
-            float speed = _playerSpeed;
-#if UNITY_EDITOR
-            if (Input.GetKey(KeyCode.LeftShift)) speed *= 3;
-#endif
-            Vector2 displacement = moveDir * (speed * Time.deltaTime);
+            Vector2 deltaV = moveDir * (_playerAccel * Time.deltaTime);
+            _playerVelocity += deltaV;
+            if (_playerVelocity.magnitude > _playerMaxSpeed)
+            {
+                _playerVelocity = _playerVelocity.normalized * _playerMaxSpeed;
+            }
+
+            if (_playerVelocity.magnitude > 0.0001f) // Friction
+            {
+                float dropAmount = _playerFriction * Time.deltaTime;
+                float newSpeed = _playerVelocity.magnitude - dropAmount;
+                newSpeed = Mathf.Max(newSpeed, 0);
+                _playerVelocity = _playerVelocity.normalized * newSpeed;
+                
+                if (newSpeed < 0.0001f) _playerVelocity = Vector2.zero;
+            }
+
+            Vector2 displacement = _playerVelocity;
+
+            // Straightforward movement:
+            //displacement = moveDir * (_playerSpeed * Time.deltaTime);
 
             bool skipCollision = false;
 #if UNITY_EDITOR
@@ -200,22 +220,21 @@ namespace Game
 #endif
             if (!skipCollision)
             {
-                RaycastHit2D[] moveCastResults = Physics2D.CircleCastAll(_playerTransform.position, _playerCollider.radius, moveDir, _playerSpeed * Time.deltaTime, _physicsLayerMask);
+                RaycastHit2D[] moveCastResults = Physics2D.CircleCastAll(_playerTransform.position, _playerCollider.radius, displacement.normalized, displacement.magnitude + 0.1f, _physicsLayerMask);
+                Vector2 totalPenetrationNormal = Vector2.zero;
                 foreach (RaycastHit2D hit in moveCastResults)
                 {
                     if (hit.collider == null) { continue; }
-
-                    // Subtract the component that's along the normal's direction
-                    displacement -= hit.normal * Vector2.Dot(displacement, hit.normal);
-
+                    totalPenetrationNormal += hit.normal;
                 }
-            }
 
+                // Subtract the component that's along the normal's direction
+                displacement -= totalPenetrationNormal * Vector2.Dot(displacement, totalPenetrationNormal);
+            }
 
             _playerTransform.position += (Vector3)displacement;
 
             Vector3 cursorWorldPos = _renderCamera.ScreenToWorldPoint(Input.mousePosition);
-            Debug.DrawLine(_playerTransform.position, cursorWorldPos, Color.yellow);
             Vector3 toCursor = cursorWorldPos.WithZ(_playerTransform.position.z) - _playerTransform.position;
             _playerTransform.right = toCursor;
 
@@ -271,7 +290,7 @@ namespace Game
 
             float volumeT = Mathf.Lerp(1, 0, dist / 10.0f);
             _ghoulAudioSource.volume = Mathf.Lerp(_ghoulAudioVolumeRange.x, _ghoulAudioVolumeRange.y, volumeT);
-            
+
             Vector3 dir = (_playerTransform.position - _ghoulTransform.position).normalized;
             _ghoulTransform.position += dir * (_ghoulRunSpeed * Time.deltaTime);
 

@@ -39,7 +39,7 @@ namespace JamKit
                 return;
             }
 
-            const string projectName = "spookey2d"; // Set this when you open a project in itch
+            const string projectName = "sight"; // Set this when you open a project in itch
 
             BuildWebGL();
 
@@ -58,6 +58,7 @@ namespace JamKit
             {
                 EditorUtility.DisplayDialog("Deploy failed :(", "Don't know why though...", "Damn");
                 UnityEngine.Debug.LogError($"Butler push failed with exit code {butlerProcess.ExitCode}");
+                UnityEngine.Debug.LogError($"Error: {butlerProcess.StandardError}");
             }
 
             File.Delete("WebGL.zip");
