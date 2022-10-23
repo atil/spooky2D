@@ -1,6 +1,7 @@
 ﻿using JamKit;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Game
 {
@@ -49,13 +50,24 @@ namespace Game
         [SerializeField] private SpriteFx _playerRunFx;
         [SerializeField] private VisibilityConeSetup _visibilityCone;
 
+        [Header("Ghoul")]
+        [SerializeField] private Transform _ghoulTransform;
+        [SerializeField] private SpriteFx _ghoulFx;
+        [SerializeField] private SpriteRenderer _ghoulRenderer;
+        [SerializeField] private float _ghoulRunSpeed = 5;
+
         private PlayerState _playerState = PlayerState.Idle;
         private Coroutine _playerFxCoroutine;
 
         private List<Vector2> _wallCorners = new List<Vector2>();
 
+        private int _physicsLayerMask;
+
+        private bool _isGhoulSequence;
+
         private void Start()
         {
+            _physicsLayerMask = ~(1 << LayerMask.NameToLayer("Player") | 1 << LayerMask.NameToLayer("Trigger"));
             _playerFxCoroutine = CoroutineStarter.Run(SpriteFx.Play(_playerIdleFx, _playerSpriteRenderer));
 
             foreach (Wall wall in FindObjectsOfType<Wall>())
@@ -72,13 +84,14 @@ namespace Game
             UpdateVisibilityShape();
 
             UpdatePlayer();
+
+            UpdateGhoulSequence();
         }
+
 
         private void UpdateVisibilityShape()
         {
             const float MaxRayDist = 40;
-
-            int excludePlayerMask = ~(1 << LayerMask.NameToLayer("Player"));
 
             List<Vector2> visibilityZoneCorners = new List<Vector2>();
 
@@ -89,11 +102,11 @@ namespace Game
             Vector2 coneDir1 = (coneP1 - (Vector2)_playerTransform.position).normalized;
             Vector2 coneDir2 = (coneP2 - (Vector2)_playerTransform.position).normalized;
 
-            RaycastHit2D coneHit1 = Physics2D.Raycast(_playerTransform.position, coneDir1, MaxRayDist, excludePlayerMask);
+            RaycastHit2D coneHit1 = Physics2D.Raycast(_playerTransform.position, coneDir1, MaxRayDist, _physicsLayerMask);
             Vector2 conePoint1 = coneHit1.collider != null ? coneHit1.point : new Ray2D(_playerTransform.position, coneDir1).GetPoint(MaxRayDist);
             visibilityZoneCorners.Add(conePoint1);
 
-            RaycastHit2D coneHit2 = Physics2D.Raycast(_playerTransform.position, coneDir2, MaxRayDist, excludePlayerMask);
+            RaycastHit2D coneHit2 = Physics2D.Raycast(_playerTransform.position, coneDir2, MaxRayDist, _physicsLayerMask);
             Vector2 conePoint2 = coneHit2.collider != null ? coneHit2.point : new Ray2D(_playerTransform.position, coneDir2).GetPoint(MaxRayDist);
             visibilityZoneCorners.Add(conePoint2);
 
@@ -103,18 +116,18 @@ namespace Game
                 if (!dir.IsDirectionBetween(coneDir1, coneDir2)) { continue; }
 
                 Vector2 nudgedCorner = corner - (dir * 0.1f);
-                RaycastHit2D hit = Physics2D.Linecast(_playerTransform.position, nudgedCorner, excludePlayerMask);
+                RaycastHit2D hit = Physics2D.Linecast(_playerTransform.position, nudgedCorner, _physicsLayerMask);
                 if (hit.collider == null)
                 {
                     visibilityZoneCorners.Add(nudgedCorner);
 
                     Vector2 dir1 = dir.Rotate(1f);
-                    RaycastHit2D rayHit1 = Physics2D.Raycast(_playerTransform.position, dir1, MaxRayDist, excludePlayerMask);
+                    RaycastHit2D rayHit1 = Physics2D.Raycast(_playerTransform.position, dir1, MaxRayDist, _physicsLayerMask);
                     Vector2 rotatedPoint1 = rayHit1.collider != null ? rayHit1.point : new Ray2D(_playerTransform.position, dir1).GetPoint(MaxRayDist);
                     visibilityZoneCorners.Add(rotatedPoint1);
 
                     Vector2 dir2 = dir.Rotate(-1f);
-                    RaycastHit2D rayHit2 = Physics2D.Raycast(_playerTransform.position, dir2, MaxRayDist, excludePlayerMask);
+                    RaycastHit2D rayHit2 = Physics2D.Raycast(_playerTransform.position, dir2, MaxRayDist, _physicsLayerMask);
                     Vector2 rotatedPoint2 = rayHit2.collider != null ? rayHit2.point : new Ray2D(_playerTransform.position, dir2).GetPoint(MaxRayDist);
                     visibilityZoneCorners.Add(rotatedPoint2);
                 }
@@ -163,15 +176,19 @@ namespace Game
             }
             moveDir.Normalize();
 
-            Vector2 displacement = moveDir * _playerSpeed * Time.deltaTime;
+            float speed = _playerSpeed;
 
-            int excludePlayerMask = ~(1 << LayerMask.NameToLayer("Player"));
-            RaycastHit2D moveCastResult = Physics2D.CircleCast(_playerTransform.position, _playerCollider.radius, moveDir, _playerSpeed * Time.deltaTime, excludePlayerMask);
-            if (moveCastResult.collider != null)
+#if UNITY_EDITOR
+            if (Input.GetKey(KeyCode.LeftShift)) speed *= 3;
+#endif
+
+            Vector2 displacement = moveDir * (speed * Time.deltaTime);
+
+            RaycastHit2D moveCastResult = Physics2D.CircleCast(_playerTransform.position, _playerCollider.radius, moveDir, _playerSpeed * Time.deltaTime, _physicsLayerMask);
+            if (false && moveCastResult.collider != null)
             {
                 // Subtract the component that's along the normal's direction
-                Vector2 a = moveCastResult.normal * Vector2.Dot(displacement, moveCastResult.normal);
-                displacement -= a;
+                displacement -= moveCastResult.normal * Vector2.Dot(displacement, moveCastResult.normal);
             }
 
             _playerTransform.position += (Vector3)displacement;
@@ -199,6 +216,29 @@ namespace Game
                     _playerFxCoroutine = CoroutineStarter.Run(SpriteFx.Play(_playerIdleFx, _playerSpriteRenderer));
                     _playerState = PlayerState.Idle;
                 }
+            }
+        }
+
+        public void OnGhoulInitiated()
+        {
+            _isGhoulSequence = true;
+            _ghoulTransform.gameObject.SetActive(true);
+            CoroutineStarter.Run(SpriteFx.Play(_ghoulFx, _ghoulRenderer));
+
+        }
+
+        private void UpdateGhoulSequence()
+        {
+            if (!_isGhoulSequence) { return; }
+            
+            Vector3 dir = (_playerTransform.position - _ghoulTransform.position).normalized;
+            _ghoulTransform.position += dir * (_ghoulRunSpeed * Time.deltaTime);
+
+            if (Vector2.Distance(_ghoulTransform.position, _playerTransform.position) < 0.7f)
+            {
+                // end
+
+                SceneManager.LoadScene("End");
             }
         }
     }

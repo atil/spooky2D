@@ -11,6 +11,7 @@ namespace Game
         [SerializeField] private Transform _playerTransform;
         [SerializeField] private MeshFilter _meshFilter;
         [SerializeField] private MeshRenderer _meshRenderer;
+        [SerializeField] private PolygonCollider2D _collider;
 
         void Start()
         {
@@ -29,7 +30,7 @@ namespace Game
             _meshFilter.mesh.SetVertices(visibilityMeshVertices.Select(p => new Vector3(p.x, p.y, 0)).ToList());
 
             List<int> indices = new List<int>();
-            // start from here: something wrong with the indices. vertices seem to be right
+            
             for (int i = 0; i < visibleCorners.Count - 1; i++)
             {
                 indices.Add(0);
@@ -39,6 +40,8 @@ namespace Game
 
             _meshFilter.mesh.SetIndices(indices, MeshTopology.Triangles, 0);
             _meshFilter.mesh.RecalculateBounds();
+
+            _collider.points = visibilityMeshVertices.ToArray();
         }
     }
 }
